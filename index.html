@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام لجنة زكاة السويق — عرض توضيحي</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="css/zakat-theme.css" rel="stylesheet">
+
+<style>
+  [x-cloak]{display:none!important}
+  body{overflow-x:hidden}
+
+  /* ---- Demo-only banner ---- */
+  .zk-demo-banner{
+    background:linear-gradient(90deg,var(--zk-gold-deep),var(--zk-gold));
+    color:#fff;font-family:'Cairo',sans-serif;font-weight:700;font-size:.78rem;
+    text-align:center;padding:7px 14px;letter-spacing:.01em;
+    position:sticky;top:0;z-index:200;
+  }
+  .zk-demo-banner i{margin-inline-end:6px}
+
+  /* ---- Login screen ---- */
+  .zk-role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .zk-role-card{
+    border:1.5px solid var(--zk-line);background:#fff;border-radius:var(--zk-radius-sm);
+    padding:12px 10px;text-align:center;cursor:pointer;transition:.16s var(--zk-ease);
+  }
+  .zk-role-card:hover{border-color:var(--zk-green-soft)}
+  .zk-role-card.active{border-color:var(--zk-gold);background:var(--zk-green-mist);box-shadow:var(--zk-shadow)}
+  .zk-role-card i{font-size:1.2rem;color:var(--zk-green);display:block;margin-bottom:6px}
+  .zk-role-card .rn{font-family:'Cairo',sans-serif;font-weight:800;font-size:.76rem;color:var(--zk-ink)}
+
+  /* ---- misc helpers ---- */
+  .zk-progress-track{background:var(--zk-line-soft);border-radius:999px;height:8px;overflow:hidden}
+  .zk-progress-fill{height:100%;border-radius:999px;transition:width .5s var(--zk-ease)}
+  .zk-empty{padding:60px 20px;text-align:center;color:var(--zk-ink-soft)}
+  .zk-empty i{font-size:2.2rem;color:var(--zk-line);display:block;margin-bottom:10px}
+  .zk-modal-backdrop{position:fixed;inset:0;background:rgba(20,31,26,.55);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+  .zk-modal{background:var(--zk-beige-card);border-radius:var(--zk-radius);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--zk-shadow-lg)}
+  .zk-modal-head{padding:20px 24px;border-bottom:1px solid var(--zk-line);display:flex;justify-content:space-between;align-items:center}
+  .zk-modal-body{padding:20px 24px}
+  .zk-stat-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--zk-line-soft);font-size:.87rem}
+  .zk-stat-line:last-child{border-bottom:none}
+  .zk-workflow-step{display:flex;align-items:center;gap:10px;padding:10px 0}
+  .zk-workflow-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;border:2px solid var(--zk-line)}
+  .zk-workflow-dot.done{background:var(--zk-green);border-color:var(--zk-green);color:#fff}
+  .zk-workflow-dot.current{background:var(--zk-gold);border-color:var(--zk-gold);color:#fff}
+  .zk-workflow-line{flex:1;height:2px;background:var(--zk-line)}
+  .zk-workflow-line.done{background:var(--zk-green)}
+  .toast-zk{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--zk-green-deep);color:#fff;padding:12px 22px;border-radius:999px;font-family:'Cairo',sans-serif;font-weight:700;font-size:.85rem;box-shadow:var(--zk-shadow-lg);z-index:400}
+
+  /* Demo has 5 parcel statuses instead of the theme's default 4 */
+  #zk-content-root .zk-kanban{grid-template-columns:repeat(5,minmax(200px,1fr))}
+</style>
+</head>
+<body x-data="zkApp()" x-cloak>
+
+<div class="zk-demo-banner">
+  <i class="bi bi-eye"></i>وضع العرض التوضيحي — بيانات وهمية لأغراض العرض فقط، لا يتم حفظ أي تعديل بشكل دائم
+</div>
+
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN -->
+<!-- ============================================================ -->
+<template x-if="!loggedIn">
+<div class="zk-login-shell zk-arabesque-bg">
+  <div class="zk-login-panel">
+    <div class="zk-brand-badge">
+      <img src="assets/logo.jpg" alt="شعار لجنة زكاة السويق">
+      <div>
+        <div style="font-family:'Amiri',serif;font-weight:700;font-size:1.15rem">لجنة زكاة السويق</div>
+        <div style="font-size:.78rem;opacity:.75">نظام الإدارة المتكامل</div>
+      </div>
+    </div>
+    <div>
+      <h2 style="font-family:'Amiri',serif;font-weight:700;font-size:1.7rem;margin-bottom:10px">مرحباً بك في العرض التوضيحي</h2>
+      <p style="opacity:.85;font-size:.92rem;max-width:420px;line-height:1.9">
+        اختر دوراً وظيفياً من القائمة لاستكشاف الشاشات وصلاحيات كل دور —
+        سجل الأسر، المساعدة العاجلة، محرك التوزيع، المحاسبة، والطرود.
+        جميع البيانات وهمية.
+      </p>
+    </div>
+    <div style="font-size:.72rem;opacity:.6">نسخة عرض ثابتة — بدون خادم أو قاعدة بيانات حقيقية</div>
+  </div>
+  <div class="zk-login-form-side">
+    <div class="zk-login-card">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font-family:'Cairo',sans-serif;font-weight:800;color:var(--zk-green-deep);font-size:1.1rem">تسجيل الدخول (تجريبي)</div>
+        <div class="text-muted" style="font-size:.8rem;color:var(--zk-ink-soft)">اختر الدور الذي تريد تجربته</div>
+      </div>
+
+      <div class="zk-role-grid mb-3">
+        <template x-for="r in roles" :key="r.key">
+          <div class="zk-role-card" :class="{active: selectedRole===r.key}" @click="selectedRole=r.key">
+            <i class="bi" :class="r.icon"></i>
+            <div class="rn" x-text="r.label"></div>
+          </div>
+        </template>
+      </div>
+
+      <button class="btn-zk-primary w-100" @click="login()">
+        <i class="bi bi-box-arrow-in-left"></i> دخول إلى النظام
+      </button>
+    </div>
+  </div>
+</div>
+</template>
+
+<!-- ============================================================ -->
+<!-- APP SHELL -->
+<!-- ============================================================ -->
+<template x-if="loggedIn">
+<div class="zk-app">
+
+  <aside class="zk-sidebar" :class="{collapsed: collapsed, 'mobile-open': mobileOpen}">
+    <div class="zk-sidebar-head">
+      <img src="assets/logo.jpg" alt="شعار">
+      <div class="zk-org-text">
+        <div class="zk-org-name">لجنة زكاة السويق</div>
+        <div class="zk-org-sub">نظام الإدارة المتكامل</div>
+      </div>
+    </div>
+
+    <nav class="zk-nav">
+      <div class="zk-nav-section-title">عام</div>
+      <a href="#" class="zk-nav-link" :class="{active: page==='dashboard'}" @click.prevent="page='dashboard'">
+        <i class="bi bi-speedometer2"></i><span>لوحة التحكم العامة</span>
+      </a>
+
+      <template x-if="can('families.view')">
+        <div>
+          <div class="zk-nav-section-title">إدارة الأسر والمساعدات</div>
+          <a href="#" class="zk-nav-link" :class="{active: page==='families'}" @click.prevent="page='families'">
+            <i class="bi bi-houses"></i><span>سجل الأسر</span>
+          </a>
+          <a href="#" class="zk-nav-link" :class="{active: page==='urgent-aid'}" @click.prevent="page='urgent-aid'">
+            <i class="bi bi-truck-front"></i><span>المساعدة العاجلة</span>
+          </a>
+          <a href="#" class="zk-nav-link" :class="{active: page==='distribution'}" @click.prevent="page='distribution'">
+            <i class="bi bi-bullseye"></i><span>محرك التوزيع</span>
+          </a>
+        </div>
+      </template>
+
+      <template x-if="can('accounting.view')">
+        <div>
+          <div class="zk-nav-section-title">المالية والمحاسبة</div>
+          <a href="#" class="zk-nav-link" :class="{active: page==='accounting'}" @click.prevent="page='accounting'">
+            <i class="bi bi-bank2"></i><span>لوحة المحاسبة</span>
+          </a>
+          <a href="#" class="zk-nav-link" :class="{active: page==='ledger'}" @click.prevent="page='ledger'">
+            <i class="bi bi-journal-text"></i><span>دفتر الأستاذ العام</span>
+          </a>
+        </div>
+      </template>
+
+      <template x-if="can('parcels.view')">
+        <div>
+          <div class="zk-nav-section-title">التجارة والتوزيع</div>
+          <a href="#" class="zk-nav-link" :class="{active: page==='parcels'}" @click.prevent="page='parcels'">
+            <i class="bi bi-truck"></i><span>محطة التسليم والطرود</span>
+          </a>
+        </div>
+      </template>
+    </nav>
+
+    <div class="zk-sidebar-foot d-flex align-items-center justify-content-between">
+      <span class="zk-role-chip" x-show="!collapsed"><i class="bi bi-shield-check"></i> <span x-text="currentRole.label"></span></span>
+      <button class="btn btn-sm text-light" @click="collapsed=!collapsed">
+        <i class="bi" :class="collapsed?'bi-chevron-double-left':'bi-chevron-double-right'"></i>
+      </button>
+    </div>
+  </aside>
+
+  <div class="zk-main">
+    <header class="zk-topbar">
+      <div class="d-flex align-items-center gap-3">
+        <button class="zk-icon-btn d-lg-none" @click="mobileOpen=!mobileOpen"><i class="bi bi-list"></i></button>
+        <div>
+          <div class="zk-page-title" x-text="pageTitles[page]"></div>
+          <div class="text-muted small" x-text="pageSubtitles[page]"></div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+          <div class="zk-avatar" x-text="currentRole.initials"></div>
+          <div class="d-none d-md-block">
+            <div class="fw-bold small" style="color:var(--zk-green-deep)" x-text="currentRole.demoName"></div>
+            <div class="text-muted" style="font-size:.72rem" x-text="currentRole.label"></div>
+          </div>
+        </div>
+        <button class="zk-icon-btn" title="تبديل الدور / خروج" @click="logout()"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </header>
+
+    <main class="zk-content" id="zk-content-root">
+
+      <!-- ============ DASHBOARD ============ -->
+      <template x-if="page==='dashboard'">
+        <div x-data="{}" x-init="$nextTick(()=>{})">
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+              <div class="zk-kpi g1">
+                <div class="zk-kpi-icon"><i class="bi bi-houses"></i></div>
+                <div class="zk-kpi-value" x-text="families.length"></div>
+                <div class="zk-kpi-label">إجمالي الأسر المسجلة</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="zk-kpi g2">
+                <div class="zk-kpi-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="zk-kpi-value" x-text="pendingCount"></div>
+                <div class="zk-kpi-label">طلبات بانتظار المراجعة/الاعتماد</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="zk-kpi g3">
+                <div class="zk-kpi-icon"><i class="bi bi-cash-coin"></i></div>
+                <div class="zk-kpi-value"><bdi lang="en" x-text="fmt(monthDisbursed)"></bdi> ر.ع</div>
+                <div class="zk-kpi-label">مصروفات الشهر الحالي</div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
+              <div class="zk-kpi g4">
+                <div class="zk-kpi-icon"><i class="bi bi-bank2"></i></div>
+                <div class="zk-kpi-value"><bdi lang="en" x-text="fmt(totalBankBalance)"></bdi> ر.ع</div>
+                <div class="zk-kpi-label">أرصدة الحسابات البنكية</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-lg-7">
+              <div class="zk-card">
+                <div class="zk-section-title"><i class="bi bi-pie-chart"></i> توزيع الأسر حسب الأولوية</div>
+                <template x-for="p in priorityBreakdown" :key="p.key">
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.86rem">
+                      <span class="fw-bold" x-text="p.label"></span>
+                      <span class="text-muted" x-text="p.count + ' أسرة'"></span>
+                    </div>
+                    <div class="zk-progress-track">
+                      <div class="zk-progress-fill" :style="`width:${p.pct}%;background:${p.color}`"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="col-lg-5">
+              <div class="zk-card">
+                <div class="zk-section-title"><i class="bi bi-activity"></i> أحدث النشاطات</div>
+                <template x-for="a in recentActivity" :key="a.id">
+                  <div class="d-flex align-items-start gap-2 mb-3">
+                    <div class="zk-workflow-dot done" style="width:22px;height:22px;font-size:.62rem"><i class="bi" :class="a.icon"></i></div>
+                    <div>
+                      <div style="font-size:.84rem;font-weight:700;color:var(--zk-ink)" x-text="a.text"></div>
+                      <div class="text-muted" style="font-size:.72rem" x-text="a.when"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ============ FAMILIES ============ -->
+      <template x-if="page==='families'">
+        <div>
+          <div class="zk-card mb-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+              <div class="zk-section-title mb-0"><i class="bi bi-houses"></i> سجل الأسر (<span x-text="families.length"></span>)</div>
+              <div class="d-flex gap-2">
+                <button class="zk-pill-btn" :class="{active: familyFilter==='all'}" @click="familyFilter='all'">الكل</button>
+                <button class="zk-pill-btn" :class="{active: familyFilter==='urgent'}" @click="familyFilter='urgent'">أولوية قصوى</button>
+                <button class="zk-pill-btn" :class="{active: familyFilter==='pending'}" @click="familyFilter='pending'">بانتظار المراجعة</button>
+              </div>
+            </div>
+          </div>
+          <div class="zk-card p-0" style="overflow-x:auto">
+            <table class="zk-table">
+              <thead>
+                <tr>
+                  <th>رب الأسرة</th><th>الرقم المدني</th><th>الأولوية</th><th>حالة الاعتماد</th><th>عدد الأفراد</th><th>نصيب الفرد</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="f in filteredFamilies" :key="f.id">
+                  <tr style="cursor:pointer" @click="openFamily(f)">
+                    <td class="fw-bold" x-text="f.name"></td>
+                    <td><bdi lang="en" x-text="f.civilId"></bdi></td>
+                    <td><span class="zk-badge" :class="f.priority" x-text="priorityLabel(f.priority)"></span></td>
+                    <td><span class="zk-badge" :class="reviewBadgeClass(f.reviewStatus)" x-text="reviewLabel(f.reviewStatus)"></span></td>
+                    <td><bdi lang="en" x-text="f.memberCount"></bdi></td>
+                    <td><bdi lang="en" x-text="fmt(f.incomePerMember)"></bdi> ر.ع</td>
+                    <td><i class="bi bi-chevron-left text-muted"></i></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <!-- ============ URGENT AID ============ -->
+      <template x-if="page==='urgent-aid'">
+        <div>
+          <div class="row g-3">
+            <template x-for="aid in urgentAids" :key="aid.id">
+              <div class="col-md-6 col-xl-4">
+                <div class="zk-card h-100">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <div class="fw-bold" x-text="aid.beneficiary"></div>
+                      <div class="text-muted small" x-text="aid.type + ' — ' + aid.reason"></div>
+                    </div>
+                    <span class="zk-badge" :class="statusBadgeClass(aid.status)" x-text="statusLabel(aid.status)"></span>
+                  </div>
+                  <div class="fw-bold mb-3" style="font-size:1.3rem;color:var(--zk-green-deep)">
+                    <bdi lang="en" x-text="fmt(aid.amount)"></bdi> ر.ع
+                  </div>
+                  <button class="btn-zk-secondary w-100" @click="openAid(aid)">
+                    <i class="bi bi-eye"></i> عرض مسار الاعتماد
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <!-- ============ DISTRIBUTION ============ -->
+      <template x-if="page==='distribution'">
+        <div class="row g-3">
+          <template x-for="c in campaigns" :key="c.id">
+            <div class="col-md-6">
+              <div class="zk-card h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div class="fw-bold" x-text="c.name"></div>
+                  <span class="zk-badge" :class="statusBadgeClass(c.status)" x-text="statusLabel(c.status)"></span>
+                </div>
+                <div class="text-muted small mb-3" x-text="c.supportType + ' — ' + c.familiesCount + ' أسرة مستفيدة'"></div>
+                <div class="zk-stat-line">
+                  <span>المبلغ لكل أسرة</span>
+                  <bdi lang="en" x-text="fmt(c.amountPerFamily) + ' ر.ع'"></bdi>
+                </div>
+                <div class="zk-stat-line">
+                  <span>إجمالي الحملة</span>
+                  <span class="fw-bold"><bdi lang="en" x-text="fmt(c.totalAmount) + ' ر.ع'"></bdi></span>
+                </div>
+                <button class="btn-zk-secondary w-100 mt-3" @click="openCampaign(c)">
+                  <i class="bi bi-eye"></i> عرض مسار الاعتماد
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ============ ACCOUNTING ============ -->
+      <template x-if="page==='accounting'">
+        <div>
+          <div class="row g-3 mb-4">
+            <template x-for="acc in bankAccounts" :key="acc.id">
+              <div class="col-md-6">
+                <div class="zk-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="fw-bold" x-text="acc.name"></div>
+                      <div class="text-muted small" x-text="acc.bank"></div>
+                    </div>
+                    <i class="bi bi-bank2" style="font-size:1.4rem;color:var(--zk-gold)"></i>
+                  </div>
+                  <div class="fw-bold mt-3" style="font-size:1.5rem;color:var(--zk-green-deep)">
+                    <bdi lang="en" x-text="fmt(acc.balance)"></bdi> ر.ع
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+          <div class="zk-card mb-4">
+            <div class="zk-section-title"><i class="bi bi-receipt"></i> المصاريف الإدارية الأخيرة</div>
+            <table class="zk-table">
+              <thead><tr><th>الفئة</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+              <tbody>
+                <template x-for="e in expenses" :key="e.id">
+                  <tr>
+                    <td x-text="e.category"></td>
+                    <td><bdi lang="en" x-text="fmt(e.amount) + ' ر.ع'"></bdi></td>
+                    <td><span class="zk-badge" :class="statusBadgeClass(e.status)" x-text="statusLabel(e.status)"></span></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <!-- ============ LEDGER ============ -->
+      <template x-if="page==='ledger'">
+        <div class="zk-card p-0" style="overflow-x:auto">
+          <table class="zk-table">
+            <thead><tr><th>التاريخ</th><th>البيان</th><th>النوع</th><th>مدين</th><th>دائن</th><th>المرجع</th></tr></thead>
+            <tbody>
+              <template x-for="l in ledger" :key="l.id">
+                <tr>
+                  <td><bdi lang="en" x-text="l.date"></bdi></td>
+                  <td x-text="l.description"></td>
+                  <td x-text="l.type"></td>
+                  <td><bdi lang="en" x-text="l.debit ? fmt(l.debit) : '—'"></bdi></td>
+                  <td><bdi lang="en" x-text="l.credit ? fmt(l.credit) : '—'"></bdi></td>
+                  <td><bdi lang="en" class="text-muted" style="font-size:.75rem" x-text="l.reference"></bdi></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <!-- ============ PARCELS (KANBAN) ============ -->
+      <template x-if="page==='parcels'">
+        <div class="zk-kanban">
+          <template x-for="col in parcelColumns" :key="col.key">
+            <div class="zk-kcol">
+              <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                <span class="fw-bold small" x-text="col.label"></span>
+                <span class="text-muted small" x-text="parcelsByStatus(col.key).length"></span>
+              </div>
+              <template x-for="p in parcelsByStatus(col.key)" :key="p.id">
+                <div class="zk-pcard">
+                  <div class="trk" x-text="p.tracking"></div>
+                  <div class="fw-bold small mt-1" x-text="p.beneficiary"></div>
+                  <div class="text-muted" style="font-size:.74rem" x-text="p.content"></div>
+                </div>
+              </template>
+              <template x-if="parcelsByStatus(col.key).length===0">
+                <div class="text-muted text-center small py-3">لا يوجد</div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+
+    </main>
+  </div>
+</div>
+</template>
+
+<!-- ============================================================ -->
+<!-- FAMILY DETAIL MODAL -->
+<!-- ============================================================ -->
+<template x-if="activeFamily">
+  <div class="zk-modal-backdrop" @click.self="activeFamily=null">
+    <div class="zk-modal">
+      <div class="zk-modal-head">
+        <div>
+          <div class="fw-bold" style="font-family:'Cairo',sans-serif" x-text="activeFamily?.name"></div>
+          <div class="text-muted small">رقم مدني: <bdi lang="en" x-text="activeFamily?.civilId"></bdi></div>
+        </div>
+        <button class="zk-icon-btn" @click="activeFamily=null"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="zk-modal-body" x-show="activeFamily">
+        <div class="zk-stat-line"><span>الحالة الاجتماعية</span><span x-text="activeFamily?.marital"></span></div>
+        <div class="zk-stat-line"><span>نوع السكن</span><span x-text="activeFamily?.housing"></span></div>
+        <div class="zk-stat-line"><span>عدد الأفراد</span><bdi lang="en" x-text="activeFamily?.memberCount"></bdi></div>
+        <div class="zk-stat-line"><span>صافي الدخل</span><bdi lang="en" x-text="fmt(activeFamily?.netIncome) + ' ر.ع'"></bdi></div>
+        <div class="zk-stat-line"><span>نصيب الفرد</span><bdi lang="en" x-text="fmt(activeFamily?.incomePerMember) + ' ر.ع'"></bdi></div>
+        <div class="zk-stat-line">
+          <span>الأولوية</span>
+          <span class="zk-badge" :class="activeFamily?.priority" x-text="priorityLabel(activeFamily?.priority)"></span>
+        </div>
+        <div class="zk-stat-line">
+          <span>حالة الاعتماد</span>
+          <span class="zk-badge" :class="reviewBadgeClass(activeFamily?.reviewStatus)" x-text="reviewLabel(activeFamily?.reviewStatus)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- ============================================================ -->
+<!-- WORKFLOW MODAL (urgent aid / distribution campaign) -->
+<!-- ============================================================ -->
+<template x-if="activeWorkflow">
+  <div class="zk-modal-backdrop" @click.self="activeWorkflow=null">
+    <div class="zk-modal">
+      <div class="zk-modal-head">
+        <div>
+          <div class="fw-bold" style="font-family:'Cairo',sans-serif" x-text="activeWorkflow?.title"></div>
+          <div class="text-muted small"><bdi lang="en" x-text="fmt(activeWorkflow?.amount) + ' ر.ع'"></bdi></div>
+        </div>
+        <button class="zk-icon-btn" @click="activeWorkflow=null"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="zk-modal-body">
+        <template x-for="(step, idx) in workflowSteps" :key="step.key">
+          <div class="zk-workflow-step">
+            <div class="zk-workflow-dot"
+                 :class="{done: stepIndex(activeWorkflow.status) > idx, current: stepIndex(activeWorkflow.status) === idx}">
+              <i class="bi" :class="stepIndex(activeWorkflow.status) > idx ? 'bi-check-lg' : ''"></i>
+              <span x-show="stepIndex(activeWorkflow.status) <= idx" x-text="idx+1"></span>
+            </div>
+            <div>
+              <div class="fw-bold small" x-text="step.label"></div>
+              <div class="text-muted" style="font-size:.72rem" x-text="step.role"></div>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="activeWorkflow.status==='rejected'">
+          <div class="alert alert-danger mt-3 mb-0">
+            <i class="bi bi-x-circle"></i> تم رفض هذا الطلب — <span x-text="activeWorkflow.rejectionReason || 'سبب غير محدد'"></span>
+          </div>
+        </template>
+
+        <template x-if="canAdvance(activeWorkflow)">
+          <button class="btn-zk-primary w-100 mt-3" @click="advanceWorkflow()">
+            <i class="bi bi-arrow-left-circle"></i> <span x-text="nextActionLabel(activeWorkflow)"></span>
+          </button>
+        </template>
+        <template x-if="activeWorkflow.status !== 'disbursed' && activeWorkflow.status !== 'rejected'">
+          <button class="btn-zk-secondary w-100 mt-2" @click="rejectWorkflow()">
+            <i class="bi bi-x-circle"></i> رفض الطلب (تجريبي)
+          </button>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Toast -->
+<template x-if="toast">
+  <div class="toast-zk" x-text="toast" x-transition></div>
+</template>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="app.js"></script>
+</body>
+</html>
